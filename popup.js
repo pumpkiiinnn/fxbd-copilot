@@ -260,6 +260,15 @@ document.getElementById('donate').addEventListener('click', (e) => {
   openModal('donateModal');
 });
 
+// GitHub仓库链接点击事件
+document.querySelector('a[href*="github.com"]').addEventListener('click', (e) => {
+  e.preventDefault();
+  // 获取链接地址
+  const githubUrl = e.currentTarget.getAttribute('href');
+  // 在新标签页中打开GitHub仓库
+  chrome.tabs.create({ url: githubUrl });
+});
+
 // 关闭按钮点击事件
 document.getElementById('closeGuideModal').addEventListener('click', () => {
   closeModal('guideModal');
