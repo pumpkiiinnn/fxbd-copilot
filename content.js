@@ -5,6 +5,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "preventVideoPause") {
     handleVideoControl(request.enable);
     sendResponse({ success: true });
+  } else if (request.action === "checkVideoStatus") {
+    // 响应周期性检查，强制处理视频
+    if (videoPlaybackInterval !== null) {
+      processVideos();
+    }
+    sendResponse({ success: true });
   }
 });
 
@@ -29,7 +35,7 @@ function enableVideoPlayback() {
   processVideos();
   
   // 设置定期检查视频的间隔
-  videoPlaybackInterval = setInterval(processVideos, 3000);
+  videoPlaybackInterval = setInterval(processVideos, 500);
   
   // 监听DOM变化，处理新添加的视频
   setupMutationObserver();
@@ -80,13 +86,25 @@ function processVideos() {
           console.log("视频暂停被阻止");
           return false;
         };
+        
+        // 添加事件监听器，防止暂停
+        video.addEventListener('pause', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          this.play().catch(err => console.warn("防止暂停时播放失败:", err));
+        }, true);
       }
       
       // 如果视频暂停了，强制播放
       if (video.paused) {
         try {
+          // 使用Promise捕获播放失败的情况
           video.play().catch(e => {
             console.warn("视频播放失败:", e);
+            // 如果是用户交互要求，尝试在短暂延迟后再次播放
+            setTimeout(() => {
+              video.play().catch(() => {});
+            }, 100);
           });
         } catch (e) {
           console.warn("尝试播放视频时出错:", e);
@@ -95,6 +113,11 @@ function processVideos() {
       
       // 其他设置
       video.muted = true; // 静音播放
+      
+      // 确保视频速率正常
+      if (video.playbackRate < 0.5) {
+        video.playbackRate = 1.0;
+      }
     }
     
     // 处理视频设置

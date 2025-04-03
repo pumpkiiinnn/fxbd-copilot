@@ -7,7 +7,35 @@ chrome.runtime.onInstalled.addListener(() => {
       chrome.storage.local.set({ 'preventingVideoPause': false });
     }
   });
+  
+  // 设置定期检查所有标签页的视频状态
+  setPeriodicVideoCheck();
 });
+
+// 定期检查所有标签页的视频状态
+function setPeriodicVideoCheck() {
+  setInterval(() => {
+    chrome.storage.local.get('preventingVideoPause', (data) => {
+      if (data.preventingVideoPause) {
+        // 如果功能已启用，向所有标签页发送消息
+        chrome.tabs.query({}, (tabs) => {
+          for (const tab of tabs) {
+            try {
+              // 尝试向所有标签页发送检查视频状态的消息
+              chrome.tabs.sendMessage(tab.id, {
+                action: "checkVideoStatus"
+              }).catch(() => {
+                // 忽略错误
+              });
+            } catch (error) {
+              // 忽略错误，继续处理其他标签页
+            }
+          }
+        });
+      }
+    });
+  }, 5000); // 每5秒检查一次
+}
 
 chrome.action.onClicked.addListener((tab) => {
   chrome.tabs.create({ url: 'popup.html' });
