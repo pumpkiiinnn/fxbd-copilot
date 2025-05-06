@@ -17,6 +17,7 @@ function setPeriodicVideoCheck() {
   setInterval(() => {
     chrome.storage.local.get('preventingVideoPause', (data) => {
       if (data.preventingVideoPause) {
+        alert('防止视频暂停功能已开启');
         // 如果功能已启用，向所有标签页发送消息
         chrome.tabs.query({}, (tabs) => {
           for (const tab of tabs) {
